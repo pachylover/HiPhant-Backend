@@ -55,6 +55,14 @@ public class HighlightController {
             response.setResultMsg("Highlight creation already in progress for this video");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
+        //이미 하이라이트가 존재하는경우 400 응답
+        List<HighlightResponse> result = highlightService.getHighlight(videoId);
+        if (result != null && !result.isEmpty()) {
+            response.setResultCode(HttpStatus.BAD_REQUEST.value());
+            response.setResultMsg("Highlight already exists for this video");
+            processing.remove(videoId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         highlightService.createHighlight(videoId);
         response.setResultCode(HttpStatus.CREATED.value());
         response.setResultMsg("Highlight creation started");

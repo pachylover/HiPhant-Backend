@@ -31,6 +31,13 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+        # JDBC / Hibernate batching for bulk inserts
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        jdbc.batch_versioned_data: true
+        # reduce session memory pressure when inserting large volumes
+        default_batch_fetch_size: 50
             
   flyway:
     enabled: true

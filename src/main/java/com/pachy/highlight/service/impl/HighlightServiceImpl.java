@@ -51,20 +51,16 @@ public class HighlightServiceImpl implements HighlightService {
             List<Chat> chats = chzzkClient.fetchAllChats(videoId);
             log.info("채팅 수집 완료 - videoId: {}, 채팅 수: {}", videoId, chats.size());
             if (!chats.isEmpty()) {
-                // DB에 이미 존재하는 player_message_time(epoch ms) 값을 조회하여 중복 제거
-                List<Long> times = chats.stream()
-                        .map(Chat::getPlayerMessageTime)
-                        .filter(Objects::nonNull)
-                        .distinct()
-                        .toList();
-                List<Long> existing = times.isEmpty() ? List.of() : chatRepository.findExistingMessageTimes(videoId, times);
-                Set<Long> existSet = new HashSet<>(existing);
-                List<Chat> toSave = chats.stream().filter(c -> c.getPlayerMessageTime() == null || !existSet.contains(c.getPlayerMessageTime())).toList();
+                final int CHUNK = 500; // chunk size for repository saveAll (should be multiple of hibernate.jdbc.batch_size)
+                for (int i = 0; i < chats.size(); i += CHUNK) {
+                    int toIndex = Math.min(i + CHUNK, chats.size());
+                    List<Chat> chunk = chats.subList(i, toIndex);
 
-                int batch = 500;
-                for (int i = 0; i < toSave.size(); i += batch) {
-                    int toIndex = Math.min(i + batch, toSave.size());
-                    chatRepository.saveAll(toSave.subList(i, toIndex));
+                    long t0 = System.currentTimeMillis();
+                    chatRepository.saveAll(chunk);
+                    long dt = System.currentTimeMillis() - t0;
+
+                    log.info("Inserted chunk [{} - {}) size={} in {} ms", i, toIndex, chunk.size(), dt);
                 }
             }
 

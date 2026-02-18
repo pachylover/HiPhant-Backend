@@ -46,13 +46,11 @@ public class ChzzkClientImpl implements ChzzkClient {
         Set<String> seen = new HashSet<>(); // dedupe within fetch by composite key
 
         log.info("채팅 수집 시작 - videoId: {}", videoId);
-        
+
         while (true) {
             try {
                 final String uri;
                 uri = String.format("/service/v1/videos/%s/chats?playerMessageTime=%d&previousVideoChatSize=%d", videoId, playerMessageTime, pageSize);
-
-                log.info("수집 타겟 URI: {}", uri);
 
                 ChzzkResponse<ChzzkChatResponse> resp = webClient.get().uri(uri)
                         .retrieve()

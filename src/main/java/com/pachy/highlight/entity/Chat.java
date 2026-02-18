@@ -14,7 +14,8 @@ import java.time.Instant;
 public class Chat {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "chats_id_seq_gen", sequenceName = "chats_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "chats_id_seq_gen")
     @Column(columnDefinition = "bigserial", updatable = false, nullable = false)
     private Long id;
 
