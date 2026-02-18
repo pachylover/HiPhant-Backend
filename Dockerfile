@@ -7,8 +7,8 @@ FROM gradle:8.6-jdk21 AS builder
 WORKDIR /home/gradle/project
 # copy everything (uses Gradle daemon image user for caching)
 COPY --chown=gradle:gradle . .
-# assemble application JAR (skip tests for faster image builds)
-RUN ./gradlew bootJar --no-daemon -x test
+# ensure wrapper is executable (Windows -> Linux copy can clear exec bit)
+RUN chmod +x ./gradlew && ./gradlew bootJar --no-daemon -x test
 
 # ---------- runtime stage ----------
 FROM eclipse-temurin:21-jre-jammy
