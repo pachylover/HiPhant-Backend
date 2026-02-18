@@ -1,4 +1,4 @@
-# CHZZK Video Highlight API
+# HiPhant API
 
 CHZZK VOD 채팅 데이터를 수집/저장하고, 채팅 집중 구간(하이라이트)을 생성해 제공하는 **백엔드 API 서버**입니다.
 
