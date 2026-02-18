@@ -1,35 +1,57 @@
+server:
+  error:
+    # 에러 발생 시 메시지를 포함하지 않음
+    include-message: never
+    # 스택트레이스(에러 경로)를 절대 노출하지 않음
+    include-stacktrace: never
+    # 에러 발생 시 바인딩 오류(파라미터 등) 노출 방지
+    include-binding-errors: never
+    # 에러 페이지 자체를 화이트라벨(기본) 페이지로 유지하거나 끔
+    whitelabel:
+      enabled: false
 spring:
   application:
     name: highlight
   datasource:
-    url: jdbc:postgresql://localhost:5432/highlight
-    username: highlight
-    password: 1234
+    # Render 환경변수에서 값을 가져오고, 없으면 로컬 DB 주소를 씁니다.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/highlight}
+    username: ${SPRING_DATASOURCE_USERNAME:highlight}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
+    driver-class-name: org.postgresql.Driver
+  
   jpa:
     hibernate:
       ddl-auto: validate
+    # SQL 에러 발생 시 쿼리가 로그에 남는 것을 방지 (운영 환경 보안)
+    show-sql: false 
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           lob:
             non_contextual_creation: true
+            
   flyway:
     enabled: true
+    # 기존 데이터가 있는 상태에서 Flyway를 처음 적용할 때 필요합니다.
     baseline-on-migrate: true
+    # 배포 환경에서 마이그레이션 위치 확인
+    locations: classpath:db/migration
+
   docker:
     compose:
       enabled: false
 
 chzzk:
   base-url: https://api.chzzk.naver.com
-  # Max bytes WebClient will buffer for a single response (defaults to 10MB here)
-  max-in-memory-size: 10485760
+  max-in-memory-size: 10485760 # 10MB
 
 gemini:
-  api-key: ${GEMINI_API_KEY:}
+  # Render 환경변수에 GEMINI_API_KEY를 꼭 추가하세요!
+  api-key: ${GEMINI_API_KEY:1234}
 
-# Logging and management
 logging:
   level:
     root: INFO
-    com.pachy.highlight: DEBUG
+    # 운영 환경에서 SQL 흐름을 보고 싶다면 아래 주석을 해제하세요.
+    # org.hibernate.SQL: DEBUG
