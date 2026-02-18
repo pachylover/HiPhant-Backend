@@ -1,33 +1,85 @@
-# CHZZK 하이라이트 서비스
+# CHZZK Video Highlight API
 
-이 저장소는 방송 채팅을 `api.chzzk`에서 수집하여 Postgres에 저장하고, 1분 단위 집계(player_message_time 기반 epoch ms)로 가장 채팅이 집중된 분을 찾아 하이라이트 메타데이터와 Gemini(요약 모델)로 생성한 제목/요약을 제공하는 API 서버입니다.
+CHZZK VOD 채팅 데이터를 수집/저장하고, 채팅 집중 구간(하이라이트)을 생성해 제공하는 **백엔드 API 서버**입니다.
 
-## 빠른 시작 (로컬)
+프론트엔드는 이 저장소에 포함되어 있지 않으며, 별도 애플리케이션에서 본 API를 호출해 사용하는 구조를 전제로 합니다.
 
-1. Postgres 인스턴스 시작(권장 이미지: `postgres:15`). `compose.yaml`을 참고하거나 환경에 맞게 조정하세요.
+## 배포 주소
 
-2. `src/main/resources/application.yaml`에 DB 접속정보를 설정하세요.
+- Production: https://hiphant.pachylover.com/
 
-3. 애플리케이션 실행:
+## 기술 스택
 
+- Language: Java 21
+- Framework: Spring Boot 3.5.x
+- Build: Gradle
+- Database: PostgreSQL 15
+- Migration: Flyway
+- Infra/Container: Docker, Docker Compose
+- External API: CHZZK Open API, Gemini API
+
+## 주요 기능
+
+- CHZZK 영상 메타데이터 조회
+- 영상 채팅 데이터 기반 하이라이트 생성
+- 하이라이트 결과 조회
+- Flyway 기반 스키마 버전 관리
+
+## API 엔드포인트
+
+### 1) 영상 정보 조회
+
+- `GET /api/v1/videos/{id}`
+
+예시:
+
+```bash
+curl https://hiphant.pachylover.com/api/v1/videos/{videoId}
 ```
+
+### 2) 하이라이트 생성
+
+- `POST /api/v1/highlights/{id}`
+
+예시:
+
+```bash
+curl -X POST https://hiphant.pachylover.com/api/v1/highlights/{videoId}
+```
+
+### 3) 하이라이트 조회
+
+- `GET /api/v1/highlights/{id}`
+
+예시:
+
+```bash
+curl https://hiphant.pachylover.com/api/v1/highlights/{videoId}
+```
+
+## 로컬 실행
+
+### 1) DB 실행
+
+```bash
+docker compose up -d postgres
+```
+
+### 2) 환경 변수 설정
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `GEMINI_API_KEY`
+
+### 3) 애플리케이션 실행
+
+```bash
 ./gradlew bootRun
 ```
 
-4. 하이라이트 생성 요청 보내기:
+## 문서
 
-```
-POST /api/v1/highlights
-{ "url": "https://.../watch?v=VIDEO_ID" }
-```
-
-5. 결과 확인: `GET /api/v1/highlights/{taskId}`로 폴링하거나 `callbackUrl`을 등록하여 Webhook으로 받으세요.
-
-## 참고
-- Flyway 마이그레이션 파일: `src/main/resources/db/migration` (V1: 초기 테이블, V2: `message_time`, `player_message_time`, 고유 인덱스 추가).
-- 로컬 개발용으로 `MockChzzkClient` 및 `MockGeminiClient`가 제공됩니다. 실제 통합 시에는 `client/` 아래에 실 구현(`ChzzkClientImpl`)을 사용하세요.
-- 상세 아키텍처, DB 스키마 및 Gemini 프롬프트는 `DESIGN.md`를 참고하세요.
-
----
-
-원하시면 OpenAPI 스펙(엔드포인트/응답 예시)을 한글로 정리해 드리거나, `api.chzzk`의 실제 클라이언트 구현을 바로 진행하겠습니다.
+- 설계 문서: `DESIGN.md`
+- DDL: `docs/DDL.sql`
+- Flyway 가이드: `docs/flyway.md`
