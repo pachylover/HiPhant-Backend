@@ -1,6 +1,8 @@
 package com.pachy.highlight.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HighlightServiceImpl implements HighlightService {
 
     private final HighlightRepository highlightRepository;
@@ -35,9 +38,7 @@ public class HighlightServiceImpl implements HighlightService {
     @Override
     @Transactional
     public Long createHighlight(String videoId) {
-        // set a non-null placeholder minute (epoch millis, truncated to minute) to satisfy DB NOT NULL
-        long placeholderMinute = Instant.now().truncatedTo(ChronoUnit.MINUTES).toEpochMilli();
-
+        log.info("하이라이트 생성 시작 - videoId: {}", videoId);
         // 비동기 처리 시작
         processVideoAsync(videoId);
         return null;
@@ -48,6 +49,7 @@ public class HighlightServiceImpl implements HighlightService {
         try {
             // 채팅 수집
             List<Chat> chats = chzzkClient.fetchAllChats(videoId);
+            log.info("채팅 수집 완료 - videoId: {}, 채팅 수: {}", videoId, chats.size());
             if (!chats.isEmpty()) {
                 // DB에 이미 존재하는 player_message_time(epoch ms) 값을 조회하여 중복 제거
                 List<Long> times = chats.stream()
@@ -67,7 +69,9 @@ public class HighlightServiceImpl implements HighlightService {
             }
 
             // 최다 채팅 1분 찾기
+            log.info("최다 채팅 찾기 시작");
             List<Object[]> peakRows = chatRepository.findPeakMinute(videoId);
+            log.info("최다 채팅 찾기 종료 - 찾은 수: {}", peakRows.size());
 
             for (Object[] row : peakRows) {
                 Highlight h = new Highlight();
@@ -110,9 +114,10 @@ public class HighlightServiceImpl implements HighlightService {
                     highlightRepository.save(h);
                 }
             }
+            log.info("하이라이트 생성 완료 - videoId: {}", videoId);
         } catch (Exception e) {
             // 예외 처리: 로그 기록 등
-            e.printStackTrace();
+            log.error("하이라이트 생성 중 예외 발생 - videoId: {}", videoId, e);
         }
     }
 
