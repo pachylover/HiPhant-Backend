@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationError(MethodArgumentNotValidException ex) {
         List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(f -> Map.of("field", f.getField(), "message", f.getDefaultMessage()))
+                .map(error -> Map.of("field", error.getField(), "message", error.getDefaultMessage()))
                 .collect(Collectors.toList());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
     }
@@ -25,8 +25,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<?> handleConstraintViolation(ConstraintViolationException ex) {
         List<Map<String, String>> errors = ex.getConstraintViolations().stream()
-                .map(v -> Map.of("path", v.getPropertyPath().toString(), "message", v.getMessage()))
+                .map(violation -> Map.of("path", violation.getPropertyPath().toString(), "message", violation.getMessage()))
                 .collect(Collectors.toList());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
     }
-}
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleGenericException(Exception ex) {
+        // Do not expose exception details in production; return a stable error shape
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("error", "internal_server_error", "message", "Internal server error"));
+    }}
