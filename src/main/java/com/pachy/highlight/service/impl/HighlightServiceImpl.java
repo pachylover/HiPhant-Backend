@@ -11,6 +11,7 @@ import com.pachy.highlight.client.ChzzkClient;
 import com.pachy.highlight.dto.HighlightResponse;
 import com.pachy.highlight.entity.Chat;
 import com.pachy.highlight.entity.Highlight;
+import com.pachy.highlight.repository.ChatBatchInsertRepository;
 import com.pachy.highlight.repository.ChatRepository;
 import com.pachy.highlight.repository.HighlightRepository;
 import com.pachy.highlight.service.HighlightService;
@@ -18,13 +19,7 @@ import com.pachy.highlight.util.VideoIdExtractor;
 
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +28,7 @@ public class HighlightServiceImpl implements HighlightService {
 
     private final HighlightRepository highlightRepository;
     private final ChatRepository chatRepository;
+    private final ChatBatchInsertRepository chatBatchInsertRepository;
     private final ChzzkClient chzzkClient;
 
     @Override
@@ -45,24 +41,29 @@ public class HighlightServiceImpl implements HighlightService {
     }
 
     @Async
+    @Transactional
     public void processVideoAsync(String videoId) {
         try {
             // 채팅 수집
             List<Chat> chats = chzzkClient.fetchAllChats(videoId);
             log.info("채팅 수집 완료 - videoId: {}, 채팅 수: {}", videoId, chats.size());
+
             if (!chats.isEmpty()) {
-                final int CHUNK = 500; // chunk size for repository saveAll (should be multiple of hibernate.jdbc.batch_size)
+                final int CHUNK = 500;
                 for (int i = 0; i < chats.size(); i += CHUNK) {
                     int toIndex = Math.min(i + CHUNK, chats.size());
                     List<Chat> chunk = chats.subList(i, toIndex);
-
                     long t0 = System.currentTimeMillis();
-                    chatRepository.saveAll(chunk);
+
+                    int inserted = chatBatchInsertRepository.insertBatch(chunk);
+
                     long dt = System.currentTimeMillis() - t0;
 
-                    log.info("Inserted chunk [{} - {}) size={} in {} ms", i, toIndex, chunk.size(), dt);
+                    log.info("Batch inserted chunk [{} - {}) requested={} inserted={} in {} ms",
+                            i, toIndex, chunk.size(), inserted, dt);
                 }
             }
+
 
             // 최다 채팅 1분 찾기
             log.info("최다 채팅 찾기 시작");
