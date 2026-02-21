@@ -36,7 +36,8 @@ public class WebUtil {
 		
 		if (ip != null) {
 			String[] ipArr = ip.split(",");
-			if (ipArr.length > 0) ip = ipArr[ipArr.length - 1]; //X-FORWARDED-FOR 에서 두번째 IP를 가져올 경우
+			// 프록시 목록이 있을 때 첫 번째 항목이 클라이언트 IP
+			if (ipArr.length > 0) ip = ipArr[0];
 			
 			return ip.trim();
 		} else return null;
@@ -84,7 +85,8 @@ public class WebUtil {
 		
 		if (ip != null) {
 			String[] ipArr = ip.split(",");
-			if (ipArr.length > 0) ip = ipArr[ipArr.length - 1]; //X-FORWARDED-FOR 에서 두번째 IP를 가져올 경우
+			// 첫 번째 항목이 실제 클라이언트 IP
+			if (ipArr.length > 0) ip = ipArr[0];
 			
 			return ip.trim();
 		} else return null;
